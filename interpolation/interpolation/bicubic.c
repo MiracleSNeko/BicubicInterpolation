@@ -26,14 +26,19 @@ typedef float ElemType;
 		双三次插值函数，返回在给定点的函数值估计 
 		输入： 待求值的点，插值区域网格点和函数值
 		输出： 待求值点的函数值估计
+		若待求值点已经在列表中，返回NaN
  * @ change history:
 		<date> | <discription>
 
  */
 ElemType Bicubic(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType *mesh_y, 
 				 ElemType *mesh_value) {
-
-
+	ElemType* position_in_mesh;
+	position_in_mesh = FindPointPosition(point_x, point_y, mesh_x, mesh_y);
+	if (NULL == position_in_mesh) return 0. / 0.;
+	// 计算部分
+	free(position_in_mesh);
+	position_in_mesh = NULL;
 }
 
 /*
@@ -41,6 +46,7 @@ ElemType Bicubic(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType 
 		确定给出节点在已知网格中的带小数坐标
 		输入：待求值的点，插值区域网格点
 		输出：带小数坐标
+		如果给定点已经在列表中，返回空指针
  * @ change history:
 		<date> | <discription>
 
@@ -48,9 +54,16 @@ ElemType Bicubic(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType 
 ElemType* FindPointPosition(ElemType point_x, ElemType point_y, ElemType *mesh_x, 
 							ElemType *mesh_y) {
 	ElemType* position;
+	int position_int_x, position_int_y;
+	position_int_x = FindValuePositionInList(point_x, mesh_x);
+	position_int_y = FindValuePositionInList(point_y, mesh_y);
+	if (-1 == position_int_x || -1 == position_int_y) {
+		return NULL;
+	}
 	position = (ElemType *)malloc(sizeof(ElemType) * 2);
-	*position = FindValueInList(point_x, mesh_x);
-	*(position + 1) = FindValueInList(point_y, mesh_y);
+	position[0] = (ElemType)position_int_x + point_x / (mesh_x[position_int_x] + mesh_x[position_int_x + 1]);
+	position[1] = (ElemType)position_int_y + point_y / (mesh_y[position_int_y] + mesh_y[position_int_y + 1]);
+	return position;
 }
 
 /*
@@ -61,10 +74,13 @@ ElemType* FindPointPosition(ElemType point_x, ElemType point_y, ElemType *mesh_x
 		如果给定值已经在列表中，返回-1
  * @ change history:
 		<date> | <discription>
-		190415 | 更改返回值类型：int -> ElemType
+		190415 | 更改返回值类型：ElemType -> int
 
  */
-ElemType FindValueInList(ElemType value, ElemType* list) {
+int FindValuePositionInList(ElemType value, ElemType* list) {
 	int cnt = 0;
-
+	int len = sizeof(list) / sizeof(ElemType);
+	while (value > list[cnt]) ++cnt;
+	if (value == list[cnt]) cnt = -1;
+	return cnt;
 }
