@@ -11,18 +11,36 @@
 		输入： excel文件(.xls), 待求值的插值点(x, y)
 		输出： 插值后待求值点的函数值f(x, y)
  * @ change history: 
-  		<date> | <discription>	
+  		<version> | <date> | <discription>
 
  *
  **********************************************************************/
 
 #include <stdio.h>
+#include <math.h>
+#include "bicubic.h"
 
-// 通过更改float为double提高精度
-typedef float ElemType;
+/*
+ * @ brief:
+		读取excel表并储存至三个数组中。mesh_x数组储存x方向坐标，mesh_y数组储存y方向坐标，
+		mesh_value二维数组储存对应(mesh_x, mesh_y)网格每一点的已知函数值。根据读取的excel
+		表中的数据计算待求值节点的插值结果。
+		输入：excel表，待插值结点的坐标，插值函数类型(TRIANGLE or BELL or BSPLINE)
+		输出：插值结果
+   @ change history:
+		<date> | <discription>
 
-// TRIANGEL: 线性分布，BELL：Bell分布，BSP：B样条曲线
-enum InterpolationType { TRIANGEL = 1, BELL = 2, BSP = 3 };
+ */
+ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolateType type) {
+	ElemType *mesh_x, *mesh_y, *mesh_value;
+	ElemType buff;
+	int dim1, dim2;
+	FILE *file;
+	file = fopen(filename, 'r');
+	fseek(file, 0, SEEK_SET);
+	while()
+}
+
 
 /* 
  * @ brief:
@@ -37,34 +55,44 @@ enum InterpolationType { TRIANGEL = 1, BELL = 2, BSP = 3 };
 		190417 | 添加枚举变量type用于确定使用哪一种插值函数
 
  */
-ElemType Bicubic(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType *mesh_y, 
-				 ElemType *mesh_value, enum InterpolationType type) {
+ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType *mesh_y, 
+						   ElemType *mesh_value, enum InterpolationType type) {
 	ElemType* position_in_mesh;
-	ElemType bicubic_answer = 0.;
-	int ierr;
-	size_t len_x = sizeof(mesh_x) / sizeof(ElemType);
+	ElemType bicubic_answer = 0., position_in_mesh_decimal[2];
+	int ierr, m, n, position_in_mesh_integer[2];
+	ElemType(*ptrInterpolaionFuncion)(ElemType);
+	size_t dim2 = sizeof(mesh_y) / sizeof(ElemType);
+	position_in_mesh_integer[0] = floor(*position_in_mesh);
+	position_in_mesh_integer[1] = floor(*(position_in_mesh + 1));
+	position_in_mesh_decimal[0] = *position_in_mesh - (ElemType)position_in_mesh_integer[0];
+	position_in_mesh_decimal[1] = *(position_in_mesh + 1) - (ElemType)position_in_mesh_integer[1];
+	free(position_in_mesh);
+	position_in_mesh = NULL;
 	position_in_mesh = FindPointPosition(point_x, point_y, mesh_x, mesh_y, ierr);
 	if (-1 == ierr) {
-		bicubic_answer = *(mesh_value + (int)position_in_mesh[0] + len_x * (int)position_in_mesh[1]);
-		free(position_in_mesh);
-		position_in_mesh = NULL;
+		bicubic_answer = *(mesh_value + position_in_mesh_integer[0] + dim2 * position_in_mesh_integer[1]);
 		return bicubic_answer;
 	}
 	switch (type) {
 	case TRIANGEL:
-
+		ptrInterpolaionFuncion = TriangelInterpolation;
 		break;
 	case BELL:
-
+		ptrInterpolaionFuncion = BellInterpolation;
 		break;
-	case BSP:
-
+	case BSPLINE:
+		ptrInterpolaionFuncion = BsplineInterpolation;
 		break;
 	default:
 		break;
 	}
-	free(position_in_mesh);
-	position_in_mesh = NULL;
+	for (m = -1; m < 3; ++m) {
+		for (n - 1; n < 3; ++n) {
+			bicubic_answer += *(mesh_value + position_in_mesh_integer[0] + m + len_x * (position_in_mesh_integer[1] + n))
+				* ptrInterpolaionFuncion(m - position_in_mesh_decimal[0]) * ptrInterpolaionFuncion(position_in_mesh_decimal[1] - n);
+		}
+	}
+	return bicubic_answer;
 }
 
 /*
@@ -124,13 +152,63 @@ int FindValuePositionInList(ElemType value, ElemType* list, int flag) {
 /*
  * @ brief:
 		线性分布函数
-		R(x) = x+1, if(-1 <= x < 0); 1-x, if(0 <= x < 1)
+		R(x) = x+1, if(-1 <= x < 0); 
+			   1-x, if(0 <= x < 1);
 		输入：x
 		输出：R(x)
  * @ change history:
 		<date> | <discription>
 
  */
-ElemType TriangelInterpolation(ElemType x) {
+inline ElemType TriangelInterpolation(ElemType x) {
+	x /= 2.0;
+	return (x < 0.) ? x + 1. : 1. - x;
+}
 
+/*
+ * @ brief:
+		Bell分布函数
+		R(x) = 0.5*(x+1.5)^2, if(-1.5 <= x <= -0.5); 
+			   0.75-x^2, if(-0.5 < x <= 0.5);
+			   0.5*(x-1.5)^2, if(0.5 < x <= 1.5);
+		输入：x
+		输出：R(x)
+ * @ change history:
+		<date> | <discription>
+
+*/
+inline ElemType BellInterpolation(ElemType x) {
+	x = x / 2. + 1.5;
+	if (x > -1.5 && x < -0.5) {
+		return 0.5*pow(x + 1.5, 2.);
+	}
+	else if (x > -0.5 && x < 0.5) {
+		return 3. / 4. - pow(x, 2.);
+	}
+	else if (x > 0.5 && x < 1.5) {
+		return 0.5*pow(x - 1.5, 2.);
+	}
+	return 0.;
+}
+
+/*
+ * @ brief:
+		三次样条函数
+		R(x) = 2/3+0.5*|x|^3-x^2, if(0 <= |x| <= 1);
+			   (2-|x|)^3/6, if(1 < |x| <= 2)
+		输入：x
+		输出：R(x)
+ * @ change history:
+		<date> | <discription>
+
+*/
+inline ElemType BsplineInterpolation(ElemType x) {
+	x = (x > 0) ? x : -x;
+	if (x >= 0. && x <= 1.) {
+		return 1.5 + 0.5*pow(x, 3.) - x*x;
+	}
+	else if (x > 1. && x <= 2.) {
+		return 1. / 6.*pow(2. - x, 3.);
+	}
+	return 1.;
 }
