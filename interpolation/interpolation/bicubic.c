@@ -21,24 +21,48 @@
 // 通过更改float为double提高精度
 typedef float ElemType;
 
+// TRIANGEL: 线性分布，BELL：Bell分布，BSP：B样条曲线
+enum InterpolationType { TRIANGEL = 1, BELL = 2, BSP = 3 };
+
 /* 
  * @ brief:
 		双三次插值函数，返回在给定点的函数值估计 
-		输入： 待求值的点，插值区域网格点和函数值
+		F(i', j') = sum_{m = -1}^{2} sum_{n = -1}^{2} F(i+m, j+n)R(m-dx)R(dy-n)
+		输入： 待求值的点，插值区域网格点和函数值，要使用的插值函数
+			   type = { TRIANGEL: 线性分布, BELL: Bell分布, BSP: B样条曲线 }
 		输出： 待求值点的函数值估计或精确值（查表）
  * @ change history:
 		<date> | <discription>
 		190416 | 更改错误处理，给定值在列表中时直接查表返回值
+		190417 | 添加枚举变量type用于确定使用哪一种插值函数
 
  */
 ElemType Bicubic(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType *mesh_y, 
-				 ElemType *mesh_value) {
+				 ElemType *mesh_value, enum InterpolationType type) {
 	ElemType* position_in_mesh;
+	ElemType bicubic_answer = 0.;
 	int ierr;
 	size_t len_x = sizeof(mesh_x) / sizeof(ElemType);
 	position_in_mesh = FindPointPosition(point_x, point_y, mesh_x, mesh_y, ierr);
-	if (-1 == ierr) return *(mesh_value + (int)position_in_mesh[0] + len_x*(int)position_in_mesh[1]);
-	// 计算部分
+	if (-1 == ierr) {
+		bicubic_answer = *(mesh_value + (int)position_in_mesh[0] + len_x * (int)position_in_mesh[1]);
+		free(position_in_mesh);
+		position_in_mesh = NULL;
+		return bicubic_answer;
+	}
+	switch (type) {
+	case TRIANGEL:
+
+		break;
+	case BELL:
+
+		break;
+	case BSP:
+
+		break;
+	default:
+		break;
+	}
 	free(position_in_mesh);
 	position_in_mesh = NULL;
 }
@@ -56,7 +80,7 @@ ElemType Bicubic(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType 
 
  */
 ElemType* FindPointPosition(ElemType point_x, ElemType point_y, ElemType *mesh_x, 
-							ElemType *mesh_y,  int flag) {
+							ElemType *mesh_y, int flag) {
 	ElemType* position;
 	int ierr_x, ierr_y;
 	int position_int_x, position_int_y;
@@ -95,4 +119,18 @@ int FindValuePositionInList(ElemType value, ElemType* list, int flag) {
 	while (value > list[cnt]) ++cnt;
 	if (value == list[cnt]) flag = -1;
 	return cnt;
+}
+
+/*
+ * @ brief:
+		线性分布函数
+		R(x) = x+1, if(-1 <= x < 0); 1-x, if(0 <= x < 1)
+		输入：x
+		输出：R(x)
+ * @ change history:
+		<date> | <discription>
+
+ */
+ElemType TriangelInterpolation(ElemType x) {
+
 }
