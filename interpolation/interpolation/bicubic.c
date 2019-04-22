@@ -13,9 +13,11 @@
  * @ change history: 
 		<date> | <ver> | <discription>
 		190408 | 0.1.0 | 初始化
+		190423 | 0.2.0 | 完成全部程序
 
  *
  **********************************************************************/
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <stdio.h>
 #include <math.h>
@@ -26,7 +28,7 @@
 		用于测试的main函数，实际使用时注释掉即可
 		测试方式：命令行参数/控制台输入
 		输入：文件名(char *)， 横坐标x（ElemType），纵坐标y（ElemType），插值函数类型（Enum/Int）
-		插值函数类型：0-线性分布，1-Bell分布，2-三次样条插值
+		插值函数类型：1-线性分布，2-Bell分布，3-三次样条插值
  */
 int main(int args, char* argv[]) {
 	char* filename = "";
@@ -40,13 +42,15 @@ int main(int args, char* argv[]) {
 		type = *(argv[4]);
 	}
 	else {
-		printf("输入格式：\n文件名\n横坐标,纵坐标\n插值函数类型");
+		printf("输入格式：\n文件名\n横坐标,纵坐标\n插值函数类型\n");
 		scanf("%s", filename);
 		if (sizeof(float) == sizeof(ElemType)) scanf("%f,%f", coordinate, coordinate + 1);
 		else if (sizeof(double) == sizeof(ElemType)) scanf("%lf,%lf", coordinate, coordinate + 1);
 		scanf("%d", &type);
 	}
 	answer = Bicubic(filename, coordinate, type);
+	if (sizeof(float) == sizeof(ElemType)) printf("插值结果为%f", answer);
+	else if (sizeof(double) == sizeof(ElemType)) printf("插值结果为%lf", answer);
 	return 0;
 }
 
@@ -63,7 +67,7 @@ int main(int args, char* argv[]) {
  */
 ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolationType type) {
 	ElemType *mesh_x, *mesh_y, *mesh_value;
-	ElemType buff;
+	ElemType buff, bicubic_answer;
 	int dim1 = 1, dim2 = 1, i = 0;
 	FILE *file;
 	file = fopen(filename, 'r');
@@ -73,10 +77,10 @@ ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolationType ty
 			++dim2;
 			fseek(file, 1L, SEEK_CUR);
 		}
-		fseek(file, 1L * dim2, SEEK_SET);
+		fseek(file, 1L * (dim2 + 1), SEEK_SET);
 		while (-1 != fscanf(file, "%f", &buff)) {
 			++dim1;
-			fseek(file, 1L * dim2, SEEK_CUR);
+			fseek(file, 1L * (dim2 + 1), SEEK_CUR);
 		}
 	}
 	else if (sizeof(double) == sizeof(ElemType)) {
@@ -84,10 +88,10 @@ ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolationType ty
 			++dim2;
 			fseek(file, 1L, SEEK_CUR);
 		}
-		fseek(file, 1L * dim2, SEEK_SET);
+		fseek(file, 1L * (dim2 + 1), SEEK_SET);
 		while (-1 != fscanf(file, "%lf", &buff)) {
 			++dim1;
-			fseek(file, 1L * dim2, SEEK_CUR);
+			fseek(file, 1L * (dim2 + 1), SEEK_CUR);
 		}
 	}
 	mesh_x = (ElemType *)malloc(dim1 * sizeof(ElemType));
@@ -95,17 +99,39 @@ ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolationType ty
 	mesh_value = (ElemType *)malloc(dim1*dim2 * sizeof(ElemType));
 	fseek(file, 1L, SEEK_SET);
 	fread(mesh_y, sizeof(ElemType), dim2, file);
-	fseek(file, 1L * dim2, SEEK_SET);
-	while (i < dim1) {
-		
+	fseek(file, 1L * (dim2 + 1), SEEK_SET);
+	while (i < dim1 && 0 != fread(mesh_x + i, sizeof(ElemType), 1, file)) {
+		fseek(file, 1L * (dim2 + 1), SEEK_CUR);
+		++i;
+	}
+	i = 0;
+	fseek(file, 1L * (dim2 + 1) + 1L, SEEK_SET);
+	while (i < dim1 && 0 != fread(mesh_value + i * dim2, sizeof(ElemType), dim2, file)) {
+		fseek(file, 1L * (dim2 + 1), SEEK_CUR);
 	}
 	fclose(file);
+	/*
+	 * 以下部分用于测试Excel是否正确读取
+	 */
+	file = fopen("mesh_x.txt", 'w');
+	fwrite(mesh_x, sizeof(ElemType), dim1, file);
+	fclose(file);
+	file = fopen("mesh_y.txt", 'w');
+	fwrite(mesh_y, sizeof(ElemType), dim2, file);
+	fclose(file);
+	file = fopen("mesh_value.txt", 'w');
+	fwrite(mesh_value, sizeof(ElemType), dim1*dim2, file);
+	fclose(file);
+	 //*/
+	bicubic_answer = InterpolateKernal(*coordinate, *(coordinate + 1), mesh_x, mesh_y,
+		mesh_value,	type);
 	free(mesh_x);
 	free(mesh_y);
 	free(mesh_value);
 	mesh_x = NULL;
 	mesh_y = NULL;
 	mesh_value = NULL;
+	return bicubic_answer;
 }
 
 
@@ -124,10 +150,10 @@ ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolationType ty
  */
 ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType *mesh_y, 
 						   ElemType *mesh_value, enum InterpolationType type) {
-	ElemType* position_in_mesh;
+	ElemType* position_in_mesh = NULL;
 	ElemType bicubic_answer = 0., position_in_mesh_decimal[2];
-	int ierr, m, n, position_in_mesh_integer[2];
-	ElemType(*ptrInterpolaionFuncion)(ElemType);
+	int ierr = 0, m, n, position_in_mesh_integer[2];
+	ElemType(*ptrInterpolaionFuncion)(ElemType) = NULL;
 	size_t dim2 = sizeof(mesh_y) / sizeof(ElemType);
 	position_in_mesh_integer[0] = floor(*position_in_mesh);
 	position_in_mesh_integer[1] = floor(*(position_in_mesh + 1));
@@ -154,9 +180,10 @@ ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x,
 		break;
 	}
 	for (m = -1; m < 3; ++m) {
-		for (n - 1; n < 3; ++n) {
+		for (n = -1; n < 3; ++n) {
 			bicubic_answer += *(mesh_value + position_in_mesh_integer[0] + m + dim2 * (position_in_mesh_integer[1] + n))
-				* ptrInterpolaionFuncion(m - position_in_mesh_decimal[0]) * ptrInterpolaionFuncion(position_in_mesh_decimal[1] - n);
+				* ptrInterpolaionFuncion(m - position_in_mesh_decimal[0]) 
+				* ptrInterpolaionFuncion(position_in_mesh_decimal[1] - n);
 		}
 	}
 	return bicubic_answer;
@@ -177,8 +204,8 @@ ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x,
 ElemType* FindPointPosition(ElemType point_x, ElemType point_y, ElemType *mesh_x, 
 							ElemType *mesh_y, int flag) {
 	ElemType* position;
-	int ierr_x, ierr_y;
-	int position_int_x, position_int_y;
+	int ierr_x = 0, ierr_y = 0;
+	int position_int_x = 0, position_int_y = 0;
 	flag = 0;
 	position_int_x = FindValuePositionInList(point_x, mesh_x, ierr_x);
 	position_int_y = FindValuePositionInList(point_y, mesh_y, ierr_y);

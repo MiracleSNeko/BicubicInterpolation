@@ -8,7 +8,7 @@ typedef float ElemType;
 enum InterpolationType { TRIANGEL = 1, BELL = 2, BSPLINE = 3 };
 
 // 函数申明部分
-ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolateType type);
+ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolationType type);
 ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType *mesh_y,
 	ElemType *mesh_value, enum InterpolationType type);
 ElemType* FindPointPosition(ElemType point_x, ElemType point_y, ElemType *mesh_x,

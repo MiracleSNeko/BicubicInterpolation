@@ -1,0 +1,32 @@
+﻿  bicubic.c
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(35): warning C4013: “malloc”未定义；假设外部返回 int
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(47): warning C4477: “scanf”: 格式字符串“%lf”需要类型“double *”的参数，但可变参数 1 拥有了类型“ElemType *”
+  e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(47): note: 请考虑在格式字符串中使用“%f”
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(47): warning C4477: “scanf”: 格式字符串“%lf”需要类型“double *”的参数，但可变参数 2 拥有了类型“ElemType *”
+  e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(47): note: 请考虑在格式字符串中使用“%f”
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(72): warning C4047: “函数”:“const char *”与“int”的间接级别不同
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(72): warning C4024: “fopen”: 形参和实参 2 的类型不同
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(86): warning C4477: “fscanf”: 格式字符串“%lf”需要类型“double *”的参数，但可变参数 1 拥有了类型“ElemType *”
+  e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(86): note: 请考虑在格式字符串中使用“%f”
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(91): warning C4477: “fscanf”: 格式字符串“%lf”需要类型“double *”的参数，但可变参数 1 拥有了类型“ElemType *”
+  e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(91): note: 请考虑在格式字符串中使用“%f”
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(115): warning C4047: “函数”:“const char *”与“int”的间接级别不同
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(115): warning C4024: “fopen”: 形参和实参 2 的类型不同
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(118): warning C4047: “函数”:“const char *”与“int”的间接级别不同
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(118): warning C4024: “fopen”: 形参和实参 2 的类型不同
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(121): warning C4047: “函数”:“const char *”与“int”的间接级别不同
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(121): warning C4024: “fopen”: 形参和实参 2 的类型不同
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(127): warning C4013: “free”未定义；假设外部返回 int
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(157): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(158): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(257): warning C4244: “return”: 从“double”转换到“ElemType”，可能丢失数据
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(273): warning C4244: “=”: 从“double”转换到“ElemType”，可能丢失数据
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(275): warning C4244: “return”: 从“double”转换到“ElemType”，可能丢失数据
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(278): warning C4244: “return”: 从“double”转换到“ElemType”，可能丢失数据
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(281): warning C4244: “return”: 从“double”转换到“ElemType”，可能丢失数据
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(300): warning C4244: “return”: 从“double”转换到“ElemType”，可能丢失数据
+e:\github\bicubicinterpolation\interpolation\interpolation\bicubic.c(303): warning C4244: “return”: 从“double”转换到“ElemType”，可能丢失数据
+  正在生成代码
+  All 15 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  interpolation.vcxproj -> E:\GitHub\BicubicInterpolation\interpolation\Release\interpolation.exe
