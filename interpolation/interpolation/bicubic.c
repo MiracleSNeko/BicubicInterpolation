@@ -20,6 +20,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "bicubic.h"
 
@@ -31,7 +32,7 @@
 		插值函数类型：1-线性分布，2-Bell分布，3-三次样条插值
  */
 int main(int args, char* argv[]) {
-	char* filename = "";
+	char filename[20] = "";
 	enum InterpolationType type;
 	ElemType* coordinate = (ElemType *)malloc(2 * sizeof(ElemType));
 	ElemType answer;
@@ -43,7 +44,7 @@ int main(int args, char* argv[]) {
 	}
 	else {
 		printf("输入格式：\n文件名\n横坐标,纵坐标\n插值函数类型\n");
-		scanf("%s", filename);
+		scanf_s("%s", filename, 20);
 		if (sizeof(float) == sizeof(ElemType)) scanf("%f,%f", coordinate, coordinate + 1);
 		else if (sizeof(double) == sizeof(ElemType)) scanf("%lf,%lf", coordinate, coordinate + 1);
 		scanf("%d", &type);
@@ -66,11 +67,13 @@ int main(int args, char* argv[]) {
 
  */
 ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolationType type) {
-	ElemType *mesh_x, *mesh_y, *mesh_value;
-	ElemType buff, bicubic_answer;
+	ElemType *mesh_x = NULL, *mesh_y = NULL, *mesh_value = NULL;
+	ElemType buff = 0., bicubic_answer = 0.;
 	int dim1 = 1, dim2 = 1, i = 0;
-	FILE *file;
-	file = fopen(filename, 'r');
+	FILE *file = NULL;
+	const char* filename_c = filename;
+	//file = fopen(filename_c, 'r');
+	fopen_s(file, filename_c, 'r');
 	fseek(file, 1L, SEEK_SET);
 	if (sizeof(float) == sizeof(ElemType)) {
 		while (-1 != fscanf(file, "%f", &buff)) {
@@ -151,12 +154,12 @@ ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolationType ty
 ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType *mesh_y, 
 						   ElemType *mesh_value, enum InterpolationType type) {
 	ElemType* position_in_mesh = NULL;
-	ElemType bicubic_answer = 0., position_in_mesh_decimal[2];
-	int ierr = 0, m, n, position_in_mesh_integer[2];
+	ElemType bicubic_answer = 0., position_in_mesh_decimal[2] = { 0, 0 };
+	int ierr = 0, m = 0, n = 0, position_in_mesh_integer[2] = { 0, 0 };
 	ElemType(*ptrInterpolaionFuncion)(ElemType) = NULL;
 	size_t dim2 = sizeof(mesh_y) / sizeof(ElemType);
-	position_in_mesh_integer[0] = floor(*position_in_mesh);
-	position_in_mesh_integer[1] = floor(*(position_in_mesh + 1));
+	position_in_mesh_integer[0] = (int)floor(*position_in_mesh);
+	position_in_mesh_integer[1] = (int)floor(*(position_in_mesh + 1));
 	position_in_mesh_decimal[0] = *position_in_mesh - (ElemType)position_in_mesh_integer[0];
 	position_in_mesh_decimal[1] = *(position_in_mesh + 1) - (ElemType)position_in_mesh_integer[1];
 	free(position_in_mesh);
@@ -203,7 +206,7 @@ ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x,
  */
 ElemType* FindPointPosition(ElemType point_x, ElemType point_y, ElemType *mesh_x, 
 							ElemType *mesh_y, int flag) {
-	ElemType* position;
+	ElemType* position = NULL;
 	int ierr_x = 0, ierr_y = 0;
 	int position_int_x = 0, position_int_y = 0;
 	flag = 0;
