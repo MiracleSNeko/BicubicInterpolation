@@ -8,12 +8,13 @@
  * @ date: 2019-4-8
  * @ brief: 
 		双三次插值计算涉及16个像素点，通过将16个像素点进行权重卷积得到新的像素值。
-		输入： excel文件(.xls), 待求值的插值点(x, y)
+		输入： 文件名(.xls/.txt), 待求值的插值点(x, y)
 		输出： 插值后待求值点的函数值f(x, y)
  * @ change history: 
 		<date> | <ver> | <discription>
 		190408 | 0.1.0 | 初始化
 		190423 | 0.2.0 | 完成全部程序
+		190424 | 0.3.0 | 修改细节错误
 
  *
  **********************************************************************/
@@ -32,24 +33,26 @@
 		插值函数类型：1-线性分布，2-Bell分布，3-三次样条插值
  */
 int main(int args, char* argv[]) {
-	char filename[20] = "";
+	char filename_x[20] = "";
+	char filename_y[20] = "";
+	char filename_mesh[20] = "";
 	enum InterpolationType type;
 	ElemType* coordinate = (ElemType *)malloc(2 * sizeof(ElemType));
 	ElemType answer;
 	if (args >= 4) {
-		*filename = *(argv[1]);
+		*filename_x = *(argv[1]);
 		*coordinate = *(argv[2]);
 		*(coordinate + 1) = *(argv[3]);
 		type = *(argv[4]);
 	}
 	else {
 		printf("输入格式：\n文件名\n横坐标,纵坐标\n插值函数类型\n");
-		scanf_s("%s", filename, 20);
+		scanf_s("%s", filename_x, 20);
 		if (sizeof(float) == sizeof(ElemType)) scanf("%f,%f", coordinate, coordinate + 1);
 		else if (sizeof(double) == sizeof(ElemType)) scanf("%lf,%lf", coordinate, coordinate + 1);
 		scanf("%d", &type);
 	}
-	answer = Bicubic(filename, coordinate, type);
+	answer = Bicubic(filename_x, filename_y, filename_mesh, coordinate, type);
 	if (sizeof(float) == sizeof(ElemType)) printf("插值结果为%f", answer);
 	else if (sizeof(double) == sizeof(ElemType)) printf("插值结果为%lf", answer);
 	return 0;
@@ -57,23 +60,27 @@ int main(int args, char* argv[]) {
 
 /*
  * @ brief:
-		读取excel表并储存至三个数组中。mesh_x数组储存x方向坐标，mesh_y数组储存y方向坐标，
+		读取文件并储存至三个数组中。mesh_x数组储存x方向坐标，mesh_y数组储存y方向坐标，
 		mesh_value二维数组储存对应(mesh_x, mesh_y)网格每一点的已知函数值。根据读取的excel
 		表中的数据计算待求值节点的插值结果。
-		输入：excel表，待插值结点的坐标，插值函数类型(TRIANGLE or BELL or BSPLINE)
+		输入：储存x坐标、y坐标、结点处函数值的三个文件，待插值结点的坐标，插值函数类型(TRIANGLE or BELL or BSPLINE)
 		输出：插值结果
    @ change history:
 		<date> | <discription>
+		190424 | 将读取一个excel文件强制改为读取三个分开的文件
 
  */
-ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolationType type) {
+ElemType Bicubic(char* filename_x, char* filename_y, char* filename_mesh, ElemType* coordinate, 
+				 enum InterpolationType type) {
 	ElemType *mesh_x = NULL, *mesh_y = NULL, *mesh_value = NULL;
 	ElemType buff = 0., bicubic_answer = 0.;
 	int dim1 = 1, dim2 = 1, i = 0;
 	FILE *file = NULL;
-	const char* filename_c = filename;
+	const char* C_filename_x = filename_x;
+	const char* C_filename_y = filename_y;
+	const char* C_filename_mesh = filename_mesh;
 	//file = fopen(filename_c, 'r');
-	fopen_s(file, filename_c, 'r');
+	fopen_s(&file, C_filename_x, "r");
 	fseek(file, 1L, SEEK_SET);
 	if (sizeof(float) == sizeof(ElemType)) {
 		while (-1 != fscanf(file, "%f", &buff)) {
@@ -116,13 +123,13 @@ ElemType Bicubic(char* filename, ElemType* coordinate, enum InterpolationType ty
 	/*
 	 * 以下部分用于测试Excel是否正确读取
 	 */
-	file = fopen("mesh_x.txt", 'w');
+	fopen_s(&file, "mesh_x.txt", "w");
 	fwrite(mesh_x, sizeof(ElemType), dim1, file);
 	fclose(file);
-	file = fopen("mesh_y.txt", 'w');
+	fopen_s(&file, "mesh_y.txt", "w");
 	fwrite(mesh_y, sizeof(ElemType), dim2, file);
 	fclose(file);
-	file = fopen("mesh_value.txt", 'w');
+	fopen_s(&file, "mesh_value.txt", "w");
 	fwrite(mesh_value, sizeof(ElemType), dim1*dim2, file);
 	fclose(file);
 	 //*/
@@ -158,13 +165,13 @@ ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x,
 	int ierr = 0, m = 0, n = 0, position_in_mesh_integer[2] = { 0, 0 };
 	ElemType(*ptrInterpolaionFuncion)(ElemType) = NULL;
 	size_t dim2 = sizeof(mesh_y) / sizeof(ElemType);
+	position_in_mesh = FindPointPosition(point_x, point_y, mesh_x, mesh_y, ierr);
 	position_in_mesh_integer[0] = (int)floor(*position_in_mesh);
 	position_in_mesh_integer[1] = (int)floor(*(position_in_mesh + 1));
 	position_in_mesh_decimal[0] = *position_in_mesh - (ElemType)position_in_mesh_integer[0];
 	position_in_mesh_decimal[1] = *(position_in_mesh + 1) - (ElemType)position_in_mesh_integer[1];
 	free(position_in_mesh);
 	position_in_mesh = NULL;
-	position_in_mesh = FindPointPosition(point_x, point_y, mesh_x, mesh_y, ierr);
 	if (-1 == ierr) {
 		bicubic_answer = *(mesh_value + position_in_mesh_integer[0] + dim2 * position_in_mesh_integer[1]);
 		return bicubic_answer;
