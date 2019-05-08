@@ -8,13 +8,14 @@
  * @ date: 2019-4-8
  * @ brief: 
 		双三次插值计算涉及16个像素点，通过将16个像素点进行权重卷积得到新的像素值。
-		输入： 文件名(.xls/.txt), 待求值的插值点(x, y)
+		输入： 文件名(.txt), 待求值的插值点(x, y)
 		输出： 插值后待求值点的函数值f(x, y)
  * @ change history: 
 		<date> | <ver> | <discription>
 		190408 | 0.1.0 | 初始化
 		190423 | 0.2.0 | 完成全部程序
 		190424 | 0.3.0 | 修改细节错误
+						 改为读取三个txt文件
 
  *
  **********************************************************************/
@@ -29,32 +30,41 @@
  * @ brief: 
 		用于测试的main函数，实际使用时注释掉即可
 		测试方式：命令行参数/控制台输入
-		输入：文件名(char *)， 横坐标x（ElemType），纵坐标y（ElemType），插值函数类型（Enum/Int）
+		输入：文件名(char *)， 数组维度（int, int），横坐标x（ElemType），纵坐标y（ElemType），插值函数类型（Enum/Int）
 		插值函数类型：1-线性分布，2-Bell分布，3-三次样条插值
  */
 int main(int args, char* argv[]) {
 	char filename_x[20] = "";
 	char filename_y[20] = "";
 	char filename_mesh[20] = "";
-	enum InterpolationType type;
+	enum InterpolationType type = 1;
+	int dim1 = 0, dim2 = 0;
 	ElemType* coordinate = (ElemType *)malloc(2 * sizeof(ElemType));
-	ElemType answer;
-	if (args >= 4) {
+	ElemType answer = 0.;
+	if (args >= 8) {
 		*filename_x = *(argv[1]);
-		*coordinate = *(argv[2]);
-		*(coordinate + 1) = *(argv[3]);
-		type = *(argv[4]);
+		*filename_y = *(argv[2]);
+		*filename_mesh = *(argv[3]);
+		dim1 = *(argv[4]);
+		dim2 = *(argv[5]);
+		*coordinate = *(argv[6]);
+		*(coordinate + 1) = *(argv[7]);
+		type = *(argv[8]);
 	}
 	else {
-		printf("输入格式：\n文件名\n横坐标,纵坐标\n插值函数类型\n");
+		printf("输入格式：\n文件名(x,y,mesh)\n数组维度(int ,int)\n横坐标,纵坐标\n插值函数类型\n");
 		scanf_s("%s", filename_x, 20);
+		scanf_s("%s", filename_y, 20);
+		scanf_s("%s", filename_mesh, 20);
+		scanf("%d,%d", &dim1, &dim2);
 		if (sizeof(float) == sizeof(ElemType)) scanf("%f,%f", coordinate, coordinate + 1);
 		else if (sizeof(double) == sizeof(ElemType)) scanf("%lf,%lf", coordinate, coordinate + 1);
 		scanf("%d", &type);
 	}
-	answer = Bicubic(filename_x, filename_y, filename_mesh, coordinate, type);
+	answer = Bicubic(filename_x, filename_y, filename_mesh, dim1, dim2, coordinate, type);
 	if (sizeof(float) == sizeof(ElemType)) printf("插值结果为%f", answer);
 	else if (sizeof(double) == sizeof(ElemType)) printf("插值结果为%lf", answer);
+	system("pause");
 	return 0;
 }
 
@@ -68,60 +78,38 @@ int main(int args, char* argv[]) {
    @ change history:
 		<date> | <discription>
 		190424 | 将读取一个excel文件强制改为读取三个分开的文件
+		190424 | 强制要求提供数组的维度
 
  */
-ElemType Bicubic(char* filename_x, char* filename_y, char* filename_mesh, ElemType* coordinate, 
-				 enum InterpolationType type) {
+ElemType Bicubic(char* filename_x, char* filename_y, char* filename_mesh, int dim1, int dim2,
+				 ElemType* coordinate, enum InterpolationType type) {
 	ElemType *mesh_x = NULL, *mesh_y = NULL, *mesh_value = NULL;
 	ElemType buff = 0., bicubic_answer = 0.;
-	int dim1 = 1, dim2 = 1, i = 0;
-	FILE *file = NULL;
+	int i = 0;
+	FILE *file_x = NULL, *file_y = NULL, *file_mesh = NULL, *file = NULL;
 	const char* C_filename_x = filename_x;
 	const char* C_filename_y = filename_y;
 	const char* C_filename_mesh = filename_mesh;
-	//file = fopen(filename_c, 'r');
-	fopen_s(&file, C_filename_x, "r");
-	fseek(file, 1L, SEEK_SET);
-	if (sizeof(float) == sizeof(ElemType)) {
-		while (-1 != fscanf(file, "%f", &buff)) {
-			++dim2;
-			fseek(file, 1L, SEEK_CUR);
-		}
-		fseek(file, 1L * (dim2 + 1), SEEK_SET);
-		while (-1 != fscanf(file, "%f", &buff)) {
-			++dim1;
-			fseek(file, 1L * (dim2 + 1), SEEK_CUR);
-		}
-	}
-	else if (sizeof(double) == sizeof(ElemType)) {
-		while (-1 != fscanf(file, "%lf", &buff)) {
-			++dim2;
-			fseek(file, 1L, SEEK_CUR);
-		}
-		fseek(file, 1L * (dim2 + 1), SEEK_SET);
-		while (-1 != fscanf(file, "%lf", &buff)) {
-			++dim1;
-			fseek(file, 1L * (dim2 + 1), SEEK_CUR);
-		}
-	}
+	fopen_s(&file_x, C_filename_x, "r");
+	fseek(file_x, 0L, SEEK_SET);
 	mesh_x = (ElemType *)malloc(dim1 * sizeof(ElemType));
+	fread(mesh_x, sizeof(ElemType), dim1, file_x);
+	fclose(file_x);
+	file_x = NULL;
+	fopen_s(&file_y, C_filename_y, "r");
+	fseek(file_y, 0L, SEEK_SET);
 	mesh_y = (ElemType *)malloc(dim2 * sizeof(ElemType));
-	mesh_value = (ElemType *)malloc(dim1*dim2 * sizeof(ElemType));
-	fseek(file, 1L, SEEK_SET);
-	fread(mesh_y, sizeof(ElemType), dim2, file);
-	fseek(file, 1L * (dim2 + 1), SEEK_SET);
-	while (i < dim1 && 0 != fread(mesh_x + i, sizeof(ElemType), 1, file)) {
-		fseek(file, 1L * (dim2 + 1), SEEK_CUR);
-		++i;
-	}
-	i = 0;
-	fseek(file, 1L * (dim2 + 1) + 1L, SEEK_SET);
-	while (i < dim1 && 0 != fread(mesh_value + i * dim2, sizeof(ElemType), dim2, file)) {
-		fseek(file, 1L * (dim2 + 1), SEEK_CUR);
-	}
-	fclose(file);
+	fread(mesh_y, sizeof(ElemType), dim2, file_y);
+	fclose(file_y);
+	file_y = NULL;
+	fopen_s(&file_mesh, C_filename_mesh, "r");
+	fseek(file_mesh, 0L, SEEK_SET);
+	mesh_value = (ElemType *)malloc(dim1 * dim2 * sizeof(ElemType));
+	fread(mesh_value, sizeof(ElemType), dim1 * dim2, file_mesh);
+	fclose(file_mesh);
+	file_mesh = NULL;
 	/*
-	 * 以下部分用于测试Excel是否正确读取
+	 * 以下部分用于测试文件是否正确读取
 	 */
 	fopen_s(&file, "mesh_x.txt", "w");
 	fwrite(mesh_x, sizeof(ElemType), dim1, file);
