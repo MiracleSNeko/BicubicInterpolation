@@ -1,22 +1,18 @@
 #ifndef _BICUBIC_H_
 #define _BICUBIC_H_
 
-// Í¨¹ı¸ü¸ÄfloatÎªdoubleÌá¸ß¾«¶È
-typedef float ElemType;
+// å¦‚æœç¼–è¯‘å™¨æ²¡æœ‰å…³äºsize_tç±»å‹çš„å®šä¹‰ï¼Œå–æ¶ˆä¸‹é¢ä¸€è¡Œçš„æ³¨é‡Šå³å¯ã€‚
+// typedef unsigned int size_t
 
-// TRIANGEL: ÏßĞÔ·Ö²¼£¬BELL£ºBell·Ö²¼£¬BSPLINE£ºBÑùÌõÇúÏß
-enum InterpolationType { TRIANGEL = 1, BELL = 2, BSPLINE = 3 };
+// æ ·æ¡å‡½æ•°å‚æ•°çš„å®šä¹‰ï¼Œé€šå¸¸å–-0.5æˆ–-0.75ã€‚
+static const float SPLINE_PARA = -.5F;
 
-// º¯ÊıÉêÃ÷²¿·Ö
-ElemType Bicubic(char* filename_x, char* filename_y, char* filename_mesh, int dim1, int dim2,
-				 ElemType* coordinate, enum InterpolationType type);
-ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType *mesh_y,
-	ElemType *mesh_value, enum InterpolationType type);
-ElemType* FindPointPosition(ElemType point_x, ElemType point_y, ElemType *mesh_x,
-	ElemType *mesh_y, int flag);
-int FindValuePositionInList(ElemType value, ElemType* list, int flag);
-inline ElemType TriangelInterpolation(ElemType x);
-inline ElemType BellInterpolation(ElemType x);
-inline ElemType BsplineInterpolation(ElemType x);
+float fBicubic(float* mesh_x, size_t len_x, float* mesh_y, size_t len_y, float* mesh_value,
+			   float coordinate_x, float coordinate_y);
+float fInterpolateKernal(float point_x, float point_y, float *mesh_x, size_t len_x,
+						 float *mesh_y, size_t len_y, float *mesh_value);
+float fFindPointPosition(float value, float* list, size_t len, int* flag);
+int fFindValuePositionInList(float value, float* list, size_t len, int* flag);
+inline float fSpline(float x);
 
 #endif

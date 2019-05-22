@@ -1,25 +1,30 @@
 /***********************************************************************
  *
  * Bicubic Interpolation
- * Ë«Èı´Î²åÖµµÄÊµÏÖ
+ * åŒä¸‰æ¬¡æ’å€¼çš„å®ç°
  * 
  * 
  * @ filename: bicubic.c
  * @ date: 2019-4-8
  * @ brief: 
-		Ë«Èı´Î²åÖµ¼ÆËãÉæ¼°16¸öÏñËØµã£¬Í¨¹ı½«16¸öÏñËØµã½øĞĞÈ¨ÖØ¾í»ıµÃµ½ĞÂµÄÏñËØÖµ¡£
-		ÊäÈë£º ÎÄ¼şÃû(.txt), ´ıÇóÖµµÄ²åÖµµã(x, y)
-		Êä³ö£º ²åÖµºó´ıÇóÖµµãµÄº¯ÊıÖµf(x, y)
+		åŒä¸‰æ¬¡æ’å€¼è®¡ç®—æ¶‰åŠ16ä¸ªåƒç´ ç‚¹ï¼Œé€šè¿‡å°†16ä¸ªåƒç´ ç‚¹è¿›è¡Œæƒé‡å·ç§¯å¾—åˆ°æ–°çš„åƒç´ å€¼ã€‚
+		è¾“å…¥ï¼š æ–‡ä»¶å(.txt), å¾…æ±‚å€¼çš„æ’å€¼ç‚¹(x, y)
+		è¾“å‡ºï¼š æ’å€¼åå¾…æ±‚å€¼ç‚¹çš„å‡½æ•°å€¼f(x, y)
  * @ change history: 
 		<date> | <ver> | <discription>
-		190408 | 0.1.0 | ³õÊ¼»¯
-		190423 | 0.2.0 | Íê³ÉÈ«²¿³ÌĞò
-		190424 | 0.3.0 | ĞŞ¸ÄÏ¸½Ú´íÎó
-						 ¸ÄÎª¶ÁÈ¡Èı¸ötxtÎÄ¼ş
+		190408 | 0.1.0 | åˆå§‹åŒ–
+		190423 | 0.2.0 | å®Œæˆå…¨éƒ¨ç¨‹åº
+		190424 | 0.3.0 | ä¿®æ”¹ç»†èŠ‚é”™è¯¯ï¼Œæ”¹ä¸ºè¯»å–ä¸‰ä¸ªtxtæ–‡ä»¶
+		190509 | 0.4.0 | å°†floatå’Œdoubleç±»å‹åˆ†å¼€å¤„ç†
+		190522 | 1.0.0 | å»æ‰å¤šä½™çš„æ’å€¼å‡½æ•°å’Œç±»å‹ï¼Œä¿®å¤å¯»æ‰¾å…¨å±€åæ ‡é”™è¯¯çš„
+						 é—®é¢˜ï¼Œå¾—åˆ°æœ€ç»ˆè®¡ç®—ç»“æœã€‚
 
+ * @ author: yjlin2018@nwpu.edu.cn
  *
  **********************************************************************/
-#define _CRT_SECURE_NO_WARNINGS
+//#define _CRT_SECURE_NO_WARNINGS
+
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,160 +33,101 @@
 
 /*
  * @ brief: 
-		ÓÃÓÚ²âÊÔµÄmainº¯Êı£¬Êµ¼ÊÊ¹ÓÃÊ±×¢ÊÍµô¼´¿É
-		²âÊÔ·½Ê½£ºÃüÁîĞĞ²ÎÊı/¿ØÖÆÌ¨ÊäÈë
-		ÊäÈë£ºÎÄ¼şÃû(char *)£¬ Êı×éÎ¬¶È£¨int, int£©£¬ºá×ø±êx£¨ElemType£©£¬×İ×ø±êy£¨ElemType£©£¬²åÖµº¯ÊıÀàĞÍ£¨Enum/Int£©
-		²åÖµº¯ÊıÀàĞÍ£º1-ÏßĞÔ·Ö²¼£¬2-Bell·Ö²¼£¬3-Èı´ÎÑùÌõ²åÖµ
+		ç”¨äºæµ‹è¯•çš„mainå‡½æ•°ï¼Œå®é™…ä½¿ç”¨æ—¶æ³¨é‡Šæ‰å³å¯
+		æµ‹è¯•æ–¹å¼ï¼šç›´æ¥è¯»å–
+		è¾“å…¥ï¼šæ¨ªåæ ‡xï¼ˆfloatï¼‰ï¼Œçºµåæ ‡yï¼ˆfloatï¼‰ï¼Œæ’å€¼å‡½æ•°ç±»å‹ï¼ˆEnum/Intï¼‰
+		æ’å€¼å‡½æ•°ç±»å‹ï¼š1-çº¿æ€§åˆ†å¸ƒï¼Œ2-Bellåˆ†å¸ƒï¼Œ3-ä¸‰æ¬¡æ ·æ¡æ’å€¼
  */
-int main(int args, char* argv[]) {
-	char filename_x[20] = "";
-	char filename_y[20] = "";
-	char filename_mesh[20] = "";
-	enum InterpolationType type = 1;
-	int dim1 = 0, dim2 = 0;
-	ElemType* coordinate = (ElemType *)malloc(2 * sizeof(ElemType));
-	ElemType answer = 0.;
-	if (args >= 8) {
-		*filename_x = *(argv[1]);
-		*filename_y = *(argv[2]);
-		*filename_mesh = *(argv[3]);
-		dim1 = *(argv[4]);
-		dim2 = *(argv[5]);
-		*coordinate = *(argv[6]);
-		*(coordinate + 1) = *(argv[7]);
-		type = *(argv[8]);
+int main() {
+	float answer = 0.F, coordinate_x = 0.F, coordinate_y = 0.F;
+	float* mesh_x = NULL;
+	float* mesh_y = NULL;
+	float* mesh_value = NULL;
+	int i, j;
+	mesh_x = (float *)malloc(sizeof(float) * 20);
+	for (i = 0; i < 20; ++i) *(mesh_x + i) = (float)i;
+	mesh_y = (float *)malloc(sizeof(float) * 20);
+	for (i = 0; i < 20; ++i) *(mesh_y + i) = (float)i;
+	mesh_value = (float *)malloc(sizeof(float) * 20 * 20);
+	for (i = 0; i < 20; ++i) {
+		for (j = 0; j < 20; ++j) {
+			*(mesh_value + i + 20 * j) = i*j;
+		}
 	}
-	else {
-		printf("ÊäÈë¸ñÊ½£º\nÎÄ¼şÃû(x,y,mesh)\nÊı×éÎ¬¶È(int ,int)\nºá×ø±ê,×İ×ø±ê\n²åÖµº¯ÊıÀàĞÍ\n");
-		scanf_s("%s", filename_x, 20);
-		scanf_s("%s", filename_y, 20);
-		scanf_s("%s", filename_mesh, 20);
-		scanf("%d,%d", &dim1, &dim2);
-		if (sizeof(float) == sizeof(ElemType)) scanf("%f,%f", coordinate, coordinate + 1);
-		else if (sizeof(double) == sizeof(ElemType)) scanf("%lf,%lf", coordinate, coordinate + 1);
-		scanf("%d", &type);
-	}
-	answer = Bicubic(filename_x, filename_y, filename_mesh, dim1, dim2, coordinate, type);
-	if (sizeof(float) == sizeof(ElemType)) printf("²åÖµ½á¹ûÎª%f", answer);
-	else if (sizeof(double) == sizeof(ElemType)) printf("²åÖµ½á¹ûÎª%lf", answer);
+	coordinate_x = 5;
+	coordinate_y = 5;
+	answer = fBicubic(mesh_x, 20, mesh_y, 20, mesh_value, coordinate_x,
+					  coordinate_y);
+ 	printf("result %lf\n", answer);
 	system("pause");
 	return 0;
 }
 
+
+/* ç±»å‹ä¸ºFloatæ—¶çš„å‡½æ•° */
+
 /*
  * @ brief:
-		¶ÁÈ¡ÎÄ¼ş²¢´¢´æÖÁÈı¸öÊı×éÖĞ¡£mesh_xÊı×é´¢´æx·½Ïò×ø±ê£¬mesh_yÊı×é´¢´æy·½Ïò×ø±ê£¬
-		mesh_value¶şÎ¬Êı×é´¢´æ¶ÔÓ¦(mesh_x, mesh_y)Íø¸ñÃ¿Ò»µãµÄÒÑÖªº¯ÊıÖµ¡£¸ù¾İ¶ÁÈ¡µÄexcel
-		±íÖĞµÄÊı¾İ¼ÆËã´ıÇóÖµ½ÚµãµÄ²åÖµ½á¹û¡£
-		ÊäÈë£º´¢´æx×ø±ê¡¢y×ø±ê¡¢½áµã´¦º¯ÊıÖµµÄÈı¸öÎÄ¼ş£¬´ı²åÖµ½áµãµÄ×ø±ê£¬²åÖµº¯ÊıÀàĞÍ(TRIANGLE or BELL or BSPLINE)
-		Êä³ö£º²åÖµ½á¹û
+		è¯»å–æ–‡ä»¶å¹¶å‚¨å­˜è‡³ä¸‰ä¸ªæ•°ç»„ä¸­ã€‚mesh_xæ•°ç»„å‚¨å­˜xæ–¹å‘åæ ‡ï¼Œmesh_yæ•°ç»„å‚¨å­˜yæ–¹å‘åæ ‡ï¼Œ
+		mesh_valueäºŒç»´æ•°ç»„å‚¨å­˜å¯¹åº”(mesh_x, mesh_y)ç½‘æ ¼æ¯ä¸€ç‚¹çš„å·²çŸ¥å‡½æ•°å€¼ã€‚æ ¹æ®è¯»å–çš„excel
+		è¡¨ä¸­çš„æ•°æ®è®¡ç®—å¾…æ±‚å€¼èŠ‚ç‚¹çš„æ’å€¼ç»“æœã€‚
+		è¾“å…¥ï¼šå‚¨å­˜xåæ ‡ã€yåæ ‡ã€ç»“ç‚¹å¤„å‡½æ•°å€¼çš„ä¸‰ä¸ªæ–‡ä»¶ï¼Œå¾…æ’å€¼ç»“ç‚¹çš„åæ ‡ï¼Œæ’å€¼å‡½æ•°ç±»å‹(TRIANGLE or BELL or BSPLINE)
+		è¾“å‡ºï¼šæ’å€¼ç»“æœ
    @ change history:
 		<date> | <discription>
-		190424 | ½«¶ÁÈ¡Ò»¸öexcelÎÄ¼şÇ¿ÖÆ¸ÄÎª¶ÁÈ¡Èı¸ö·Ö¿ªµÄÎÄ¼ş
-		190424 | Ç¿ÖÆÒªÇóÌá¹©Êı×éµÄÎ¬¶È
+		190424 | å°†è¯»å–ä¸€ä¸ªexcelæ–‡ä»¶å¼ºåˆ¶æ”¹ä¸ºè¯»å–ä¸‰ä¸ªåˆ†å¼€çš„æ–‡ä»¶
+		190424 | å¼ºåˆ¶è¦æ±‚æä¾›æ•°ç»„çš„ç»´åº¦
+		190509 | å°†è¾“å…¥æ”¹ä¸ºæ•°ç»„æœ¬èº«
 
  */
-ElemType Bicubic(char* filename_x, char* filename_y, char* filename_mesh, int dim1, int dim2,
-				 ElemType* coordinate, enum InterpolationType type) {
-	ElemType *mesh_x = NULL, *mesh_y = NULL, *mesh_value = NULL;
-	ElemType buff = 0., bicubic_answer = 0.;
-	int i = 0;
-	FILE *file_x = NULL, *file_y = NULL, *file_mesh = NULL, *file = NULL;
-	const char* C_filename_x = filename_x;
-	const char* C_filename_y = filename_y;
-	const char* C_filename_mesh = filename_mesh;
-	fopen_s(&file_x, C_filename_x, "r");
-	fseek(file_x, 0L, SEEK_SET);
-	mesh_x = (ElemType *)malloc(dim1 * sizeof(ElemType));
-	fread(mesh_x, sizeof(ElemType), dim1, file_x);
-	fclose(file_x);
-	file_x = NULL;
-	fopen_s(&file_y, C_filename_y, "r");
-	fseek(file_y, 0L, SEEK_SET);
-	mesh_y = (ElemType *)malloc(dim2 * sizeof(ElemType));
-	fread(mesh_y, sizeof(ElemType), dim2, file_y);
-	fclose(file_y);
-	file_y = NULL;
-	fopen_s(&file_mesh, C_filename_mesh, "r");
-	fseek(file_mesh, 0L, SEEK_SET);
-	mesh_value = (ElemType *)malloc(dim1 * dim2 * sizeof(ElemType));
-	fread(mesh_value, sizeof(ElemType), dim1 * dim2, file_mesh);
-	fclose(file_mesh);
-	file_mesh = NULL;
-	/*
-	 * ÒÔÏÂ²¿·ÖÓÃÓÚ²âÊÔÎÄ¼şÊÇ·ñÕıÈ·¶ÁÈ¡
-	 */
-	fopen_s(&file, "mesh_x.txt", "w");
-	fwrite(mesh_x, sizeof(ElemType), dim1, file);
-	fclose(file);
-	fopen_s(&file, "mesh_y.txt", "w");
-	fwrite(mesh_y, sizeof(ElemType), dim2, file);
-	fclose(file);
-	fopen_s(&file, "mesh_value.txt", "w");
-	fwrite(mesh_value, sizeof(ElemType), dim1*dim2, file);
-	fclose(file);
-	 //*/
-	bicubic_answer = InterpolateKernal(*coordinate, *(coordinate + 1), mesh_x, mesh_y,
-		mesh_value,	type);
-	free(mesh_x);
-	free(mesh_y);
-	free(mesh_value);
-	mesh_x = NULL;
-	mesh_y = NULL;
-	mesh_value = NULL;
+float fBicubic(float* mesh_x, size_t len_x, float* mesh_y, size_t len_y, float* mesh_value, 
+			   float coordinate_x, float coordinate_y) {
+	float bicubic_answer = 0.F;
+	bicubic_answer = fInterpolateKernal(coordinate_x, coordinate_y, mesh_x, len_x,
+		mesh_y, len_y, mesh_value);
 	return bicubic_answer;
 }
 
 
 /* 
  * @ brief:
-		Ë«Èı´Î²åÖµº¯Êı£¬·µ»ØÔÚ¸ø¶¨µãµÄº¯ÊıÖµ¹À¼Æ 
+		åŒä¸‰æ¬¡æ’å€¼å‡½æ•°ï¼Œè¿”å›åœ¨ç»™å®šç‚¹çš„å‡½æ•°å€¼ä¼°è®¡ 
 		F(i', j') = sum_{m = -1}^{2} sum_{n = -1}^{2} F(i+m, j+n)R(m-dx)R(dy-n)
-		ÊäÈë£º ´ıÇóÖµµÄµã£¬²åÖµÇøÓòÍø¸ñµãºÍº¯ÊıÖµ£¬ÒªÊ¹ÓÃµÄ²åÖµº¯Êı
-			   type = { TRIANGEL: ÏßĞÔ·Ö²¼, BELL: Bell·Ö²¼, BSP: BÑùÌõÇúÏß }
-		Êä³ö£º ´ıÇóÖµµãµÄº¯ÊıÖµ¹À¼Æ»ò¾«È·Öµ£¨²é±í£©
+		è¾“å…¥ï¼š å¾…æ±‚å€¼çš„ç‚¹ï¼Œæ’å€¼åŒºåŸŸç½‘æ ¼ç‚¹å’Œå‡½æ•°å€¼ï¼Œè¦ä½¿ç”¨çš„æ’å€¼å‡½æ•°
+		è¾“å‡ºï¼š å¾…æ±‚å€¼ç‚¹çš„å‡½æ•°å€¼ä¼°è®¡æˆ–ç²¾ç¡®å€¼ï¼ˆæŸ¥è¡¨ï¼‰
  * @ change history:
 		<date> | <discription>
-		190416 | ¸ü¸Ä´íÎó´¦Àí£¬¸ø¶¨ÖµÔÚÁĞ±íÖĞÊ±Ö±½Ó²é±í·µ»ØÖµ
-		190417 | Ìí¼ÓÃ¶¾Ù±äÁ¿typeÓÃÓÚÈ·¶¨Ê¹ÓÃÄÄÒ»ÖÖ²åÖµº¯Êı
+		190416 | æ›´æ”¹é”™è¯¯å¤„ç†ï¼Œç»™å®šå€¼åœ¨åˆ—è¡¨ä¸­æ—¶ç›´æ¥æŸ¥è¡¨è¿”å›å€¼
+		190417 | æ·»åŠ æšä¸¾å˜é‡typeç”¨äºç¡®å®šä½¿ç”¨å“ªä¸€ç§æ’å€¼å‡½æ•°
 
  */
-ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x, ElemType *mesh_y, 
-						   ElemType *mesh_value, enum InterpolationType type) {
-	ElemType* position_in_mesh = NULL;
-	ElemType bicubic_answer = 0., position_in_mesh_decimal[2] = { 0, 0 };
+float fInterpolateKernal(float point_x, float point_y, float *mesh_x, size_t len_x,
+						 float *mesh_y, size_t len_y, float *mesh_value) {
+	float position_in_mesh[2] = { 0.F, 0.F };
+	float bicubic_answer = 0.F, position_in_mesh_decimal[2] = { 0.F, 0.F };
 	int ierr = 0, m = 0, n = 0, position_in_mesh_integer[2] = { 0, 0 };
-	ElemType(*ptrInterpolaionFuncion)(ElemType) = NULL;
-	size_t dim2 = sizeof(mesh_y) / sizeof(ElemType);
-	position_in_mesh = FindPointPosition(point_x, point_y, mesh_x, mesh_y, ierr);
-	position_in_mesh_integer[0] = (int)floor(*position_in_mesh);
-	position_in_mesh_integer[1] = (int)floor(*(position_in_mesh + 1));
-	position_in_mesh_decimal[0] = *position_in_mesh - (ElemType)position_in_mesh_integer[0];
-	position_in_mesh_decimal[1] = *(position_in_mesh + 1) - (ElemType)position_in_mesh_integer[1];
-	free(position_in_mesh);
-	position_in_mesh = NULL;
+	float weight = 0.F, increment = 0.F;
+	size_t dim2 = len_x;
+	position_in_mesh[0] = fFindPointPosition(point_x, mesh_x, len_x, &ierr);
+	position_in_mesh[1] = fFindPointPosition(point_y, mesh_y, len_y, &ierr);
+	position_in_mesh_integer[0] = (int)floor(position_in_mesh[0]);
+	position_in_mesh_integer[1] = (int)floor(position_in_mesh[1]);
+	position_in_mesh_decimal[0] = position_in_mesh[0] - (float)position_in_mesh_integer[0];
+	position_in_mesh_decimal[1] = position_in_mesh[1] - (float)position_in_mesh_integer[1];
 	if (-1 == ierr) {
 		bicubic_answer = *(mesh_value + position_in_mesh_integer[0] + dim2 * position_in_mesh_integer[1]);
 		return bicubic_answer;
 	}
-	switch (type) {
-	case TRIANGEL:
-		ptrInterpolaionFuncion = TriangelInterpolation;
-		break;
-	case BELL:
-		ptrInterpolaionFuncion = BellInterpolation;
-		break;
-	case BSPLINE:
-		ptrInterpolaionFuncion = BsplineInterpolation;
-		break;
-	default:
-		break;
-	}
+	/* TODO: è¾¹ç¼˜é¡¹çš„å¤„ç†
+	 * è¦æ±‚è¾“å…¥æ—¶çŸ©é˜µå…³äºxå’Œyå„è‡ªå¤šæ‰©å±•ä¸€ç»´
+	 * æˆ–è®¸å¯è€ƒè™‘é€šè¿‡çŸ©å½¢çš„å¯¹ç§°æ€§è¿›è¡Œå¤„ç†
+	 * @ author: yjlin2018@mail.nwpu.edu.cn
+	 */
 	for (m = -1; m < 3; ++m) {
 		for (n = -1; n < 3; ++n) {
-			bicubic_answer += *(mesh_value + position_in_mesh_integer[0] + m + dim2 * (position_in_mesh_integer[1] + n))
-				* ptrInterpolaionFuncion(m - position_in_mesh_decimal[0]) 
-				* ptrInterpolaionFuncion(position_in_mesh_decimal[1] - n);
+			weight = fSpline(m - position_in_mesh_decimal[0])*fSpline(n - position_in_mesh_decimal[1]);
+			increment = *(mesh_value + (position_in_mesh_integer[0] + m) + dim2 * (position_in_mesh_integer[1] + n))*weight;
+			bicubic_answer += increment;
 		}
 	}
 	return bicubic_answer;
@@ -189,118 +135,69 @@ ElemType InterpolateKernal(ElemType point_x, ElemType point_y, ElemType *mesh_x,
 
 /*
  * @ brief:
-		È·¶¨¸ø³ö½ÚµãÔÚÒÑÖªÍø¸ñÖĞµÄ´øĞ¡Êı×ø±ê
-		ÊäÈë£º´ıÇóÖµµÄµã£¬²åÖµÇøÓòÍø¸ñµã
-		Êä³ö£º´øĞ¡Êı×ø±ê
-		Èç¹û¸ø¶¨µãÒÑ¾­ÔÚÁĞ±íÖĞ£¬·µ»ØÕûÊı×ø±ê£¬flag¸³Öµ-1
+		ç¡®å®šç»™å‡ºèŠ‚ç‚¹åœ¨å·²çŸ¥ç½‘æ ¼ä¸­çš„å¸¦å°æ•°åæ ‡
+		è¾“å…¥ï¼šå¾…æ±‚å€¼çš„ç‚¹ï¼Œæ’å€¼åŒºåŸŸç½‘æ ¼ç‚¹
+		è¾“å‡ºï¼šå¸¦å°æ•°åæ ‡
+		å¦‚æœç»™å®šç‚¹å·²ç»åœ¨åˆ—è¡¨ä¸­ï¼Œè¿”å›æ•´æ•°åæ ‡ï¼Œflagèµ‹å€¼-1
  * @ change history:
 		<date> | <discription>
-		190416 | ¸ü¸Ä´íÎó´¦Àí£¬Ôö¼Óflag£¬¸ø¶¨ÖµÔÚÁĞ±í
-				 ÖĞÊ±flag¸³Öµ-1£¬·µ»ØÕûÊı×ø±ê
+		190416 | æ›´æ”¹é”™è¯¯å¤„ç†ï¼Œå¢åŠ flagï¼Œç»™å®šå€¼åœ¨åˆ—è¡¨
+				 ä¸­æ—¶flagèµ‹å€¼-1ï¼Œè¿”å›æ•´æ•°åæ ‡
 
  */
-ElemType* FindPointPosition(ElemType point_x, ElemType point_y, ElemType *mesh_x, 
-							ElemType *mesh_y, int flag) {
-	ElemType* position = NULL;
-	int ierr_x = 0, ierr_y = 0;
-	int position_int_x = 0, position_int_y = 0;
+float fFindPointPosition(float value, float* list, size_t len, int* flag) {
+	float position = 0.F;
+	int ierr = 0;
+	int position_int = 0;
 	flag = 0;
-	position_int_x = FindValuePositionInList(point_x, mesh_x, ierr_x);
-	position_int_y = FindValuePositionInList(point_y, mesh_y, ierr_y);
-	position = (ElemType *)malloc(sizeof(ElemType) * 2);
-	position[0] = (ElemType)position_int_x;
-	position[1] = (ElemType)position_int_y;
-	if (-1 == ierr_x && -1 == ierr_y) {
-		flag = -1;
-		return position;
-	}
-	position[0] +=  point_x / (mesh_x[position_int_x] + mesh_x[position_int_x + 1]);
-	position[1] +=  point_y / (mesh_y[position_int_y] + mesh_y[position_int_y + 1]);
+	position_int = fFindValuePositionInList(value, list, len, &ierr);
+	if (-1 == ierr) return (float)position_int;
+	position = (float)position_int + (value - list[position_int]) / (list[position_int + 1] - list[position_int]);
 	return position;
 }
 
 /*
  * @ brief:
-		ÔÚÓĞĞòÁĞ±íÖĞ²éÕÒÖµ²»´óÓÚ¸ø¶¨ÊıµÄ×î´óÔªËØµÄÎ»ÖÃ
-		ÊäÈë£º ¸ø¶¨Êı£¬¸ø¶¨ÁĞ±í
-		Êä³ö£º ²»´óÓÚ¸ø¶¨ÊıµÄ×î´óÔªËØË÷ÒıµÄÎ»ÖÃ
-		Èç¹û¸ø¶¨ÖµÒÑ¾­ÔÚÁĞ±íÖĞ£¬flag·µ»Ø-1
+		åœ¨æœ‰åºåˆ—è¡¨ä¸­æŸ¥æ‰¾å€¼ä¸å¤§äºç»™å®šæ•°çš„æœ€å¤§å…ƒç´ çš„ä½ç½®
+		è¾“å…¥ï¼š ç»™å®šæ•°ï¼Œç»™å®šåˆ—è¡¨
+		è¾“å‡ºï¼š ä¸å¤§äºç»™å®šæ•°çš„æœ€å¤§å…ƒç´ ç´¢å¼•çš„ä½ç½®
+		å¦‚æœç»™å®šå€¼å·²ç»åœ¨åˆ—è¡¨ä¸­ï¼Œflagè¿”å›-1
  * @ change history:
 		<date> | <discription>
-		190415 | ¸ü¸Ä·µ»ØÖµÀàĞÍ£ºElemType -> int
-		190416 | ¸ü¸Ä´íÎó´¦Àí£¬Ôö¼Óflag£¬¸ø¶¨ÖµÔÚÁĞ±í
-				 ÖĞÊ±Ö±½Ó·µ»Ø-1¸ÄÎªflag·µ»Ø-1
+		190415 | æ›´æ”¹è¿”å›å€¼ç±»å‹ï¼šfloat -> int
+		190416 | æ›´æ”¹é”™è¯¯å¤„ç†ï¼Œå¢åŠ flagï¼Œç»™å®šå€¼åœ¨åˆ—è¡¨
+				 ä¸­æ—¶ç›´æ¥è¿”å›-1æ”¹ä¸ºflagè¿”å›-1
 
  */
-int FindValuePositionInList(ElemType value, ElemType* list, int flag) {
-	int cnt = 0;
-	flag = 0;
-	size_t len = sizeof(list) / sizeof(ElemType);
-	while (value > list[cnt]) ++cnt;
-	if (value == list[cnt]) flag = -1;
-	return cnt;
+int fFindValuePositionInList(float value, float* list, size_t len, int* flag) {
+	unsigned int cnt = 0;
+	*flag = 0;
+	while (value > list[cnt] && cnt < len) ++cnt;
+	if (value == list[cnt]) *flag = -1;
+	return cnt - 1; // Cæ•°ç»„ä¸‹æ ‡ä»0å¼€å§‹ï¼Œå› æ­¤åœ¨æ•°ç»„ä¸­çš„ç´¢å¼•åº”è¯¥å‡ä¸€
 }
 
 /*
  * @ brief:
-		ÏßĞÔ·Ö²¼º¯Êı
-		R(x) = x+1, if(-1 <= x < 0); 
-			   1-x, if(0 <= x < 1);
-		ÊäÈë£ºx
-		Êä³ö£ºR(x)
- * @ change history:
-		<date> | <discription>
-
- */
-inline ElemType TriangelInterpolation(ElemType x) {
-	x /= 2.0;
-	return (x < 0.) ? x + 1. : 1. - x;
-}
-
-/*
- * @ brief:
-		Bell·Ö²¼º¯Êı
-		R(x) = 0.5*(x+1.5)^2, if(-1.5 <= x <= -0.5); 
-			   0.75-x^2, if(-0.5 < x <= 0.5);
-			   0.5*(x-1.5)^2, if(0.5 < x <= 1.5);
-		ÊäÈë£ºx
-		Êä³ö£ºR(x)
+		æ ·æ¡å‡½æ•°
+		R(x) = (a+2)*abs(x)^3 - (a+3)*abs(x)^2 + 1 for abs(x) <= 1
+			   a*abs(x)^3 - 5a*abs(x)^2 + 8a*abs(x) -4a for 1 < abs(x) < 2
+			   0 for otherwise
+		å‚æ•°aé€šå¸¸å–-0.5æˆ–-0.75ã€‚åœ¨å¤´æ–‡ä»¶ä¸­æœ‰å‚æ•°çš„å®å®šä¹‰ã€‚
+		è¾“å…¥ï¼šx
+		è¾“å‡ºï¼šR(x)
  * @ change history:
 		<date> | <discription>
 
 */
-inline ElemType BellInterpolation(ElemType x) {
-	x = x / 2. + 1.5;
-	if (x > -1.5 && x < -0.5) {
-		return 0.5*pow(x + 1.5, 2.);
-	}
-	else if (x > -0.5 && x < 0.5) {
-		return 3. / 4. - pow(x, 2.);
-	}
-	else if (x > 0.5 && x < 1.5) {
-		return 0.5*pow(x - 1.5, 2.);
-	}
-	return 0.;
-}
-
-/*
- * @ brief:
-		Èı´ÎÑùÌõº¯Êı
-		R(x) = 2/3+0.5*|x|^3-x^2, if(0 <= |x| <= 1);
-			   (2-|x|)^3/6, if(1 < |x| <= 2)
-		ÊäÈë£ºx
-		Êä³ö£ºR(x)
- * @ change history:
-		<date> | <discription>
-
-*/
-inline ElemType BsplineInterpolation(ElemType x) {
-	x = (x > 0) ? x : -x;
-	if (x >= 0. && x <= 1.) {
-		return 1.5 + 0.5*pow(x, 3.) - x*x;
+inline float fSpline(float x) {
+	float answer = 0.F;
+	x = (x > 0.F) ? x : -x;
+	if (x >= 0.F && x <= 1.F) {
+		answer = (SPLINE_PARA + 2.F)*x*x*x - (SPLINE_PARA + 3.F)*x*x + 1;
 	}
 	else if (x > 1. && x <= 2.) {
-		return 1. / 6.*pow(2. - x, 3.);
+		answer = SPLINE_PARA * x*x*x - 5 * SPLINE_PARA*x*x + 8 * SPLINE_PARA*x - 4 * SPLINE_PARA;
 	}
-	return 1.;
+	return answer;
 }
