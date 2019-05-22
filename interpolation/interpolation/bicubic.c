@@ -35,8 +35,7 @@
  * @ brief: 
 		用于测试的main函数，实际使用时注释掉即可
 		测试方式：直接读取
-		输入：横坐标x（float），纵坐标y（float），插值函数类型（Enum/Int）
-		插值函数类型：1-线性分布，2-Bell分布，3-三次样条插值
+		输入：横坐标x（float），纵坐标y（float）
  */
 int main() {
 	float answer = 0.F, coordinate_x = 0.F, coordinate_y = 0.F;
@@ -51,11 +50,11 @@ int main() {
 	mesh_value = (float *)malloc(sizeof(float) * 20 * 20);
 	for (i = 0; i < 20; ++i) {
 		for (j = 0; j < 20; ++j) {
-			*(mesh_value + i + 20 * j) = i*j;
+			*(mesh_value + i + 20 * j) = i*i*i+j*j*j;
 		}
 	}
-	coordinate_x = 5;
-	coordinate_y = 5;
+	coordinate_x = 5.001F;
+	coordinate_y = 5.01F;
 	answer = fBicubic(mesh_x, 20, mesh_y, 20, mesh_value, coordinate_x,
 					  coordinate_y);
  	printf("result %lf\n", answer);
@@ -69,9 +68,8 @@ int main() {
 /*
  * @ brief:
 		读取文件并储存至三个数组中。mesh_x数组储存x方向坐标，mesh_y数组储存y方向坐标，
-		mesh_value二维数组储存对应(mesh_x, mesh_y)网格每一点的已知函数值。根据读取的excel
-		表中的数据计算待求值节点的插值结果。
-		输入：储存x坐标、y坐标、结点处函数值的三个文件，待插值结点的坐标，插值函数类型(TRIANGLE or BELL or BSPLINE)
+		mesh_value二维数组储存对应(mesh_x, mesh_y)网格每一点的已知函数值。根据数据计算待求值节点的插值结果。
+		输入：储存x坐标、y坐标、结点处函数值的三个数组，待插值结点的坐标
 		输出：插值结果
    @ change history:
 		<date> | <discription>

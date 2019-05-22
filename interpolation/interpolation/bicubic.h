@@ -5,7 +5,7 @@
 // typedef unsigned int size_t
 
 // 样条函数参数的定义，通常取-0.5或-0.75。
-static const float SPLINE_PARA = -.5F;
+static const float SPLINE_PARA = -.75F;
 
 float fBicubic(float* mesh_x, size_t len_x, float* mesh_y, size_t len_y, float* mesh_value,
 			   float coordinate_x, float coordinate_y);
