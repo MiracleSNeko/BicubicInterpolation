@@ -50,11 +50,11 @@ int main() {
 	mesh_value = (float *)malloc(sizeof(float) * 20 * 20);
 	for (i = 0; i < 20; ++i) {
 		for (j = 0; j < 20; ++j) {
-			*(mesh_value + i + 20 * j) = i*i*i+j*j*j;
+			*(mesh_value + i + 20 * j) = (float)(i*i*i*i+j*j*j*j);
 		}
 	}
-	coordinate_x = 5.001F;
-	coordinate_y = 5.01F;
+	coordinate_x = 5.5F;
+	coordinate_y = 6.5F;
 	answer = fBicubic(mesh_x, 20, mesh_y, 20, mesh_value, coordinate_x,
 					  coordinate_y);
  	printf("result %lf\n", answer);
@@ -104,7 +104,7 @@ float fInterpolateKernal(float point_x, float point_y, float *mesh_x, size_t len
 	float position_in_mesh[2] = { 0.F, 0.F };
 	float bicubic_answer = 0.F, position_in_mesh_decimal[2] = { 0.F, 0.F };
 	int ierr = 0, m = 0, n = 0, position_in_mesh_integer[2] = { 0, 0 };
-	float weight = 0.F, increment = 0.F;
+	float weight = 0.F, increment = 0.F, cloestMeshPoint = 0.F;
 	size_t dim2 = len_x;
 	position_in_mesh[0] = fFindPointPosition(point_x, mesh_x, len_x, &ierr);
 	position_in_mesh[1] = fFindPointPosition(point_y, mesh_y, len_y, &ierr);
@@ -124,7 +124,8 @@ float fInterpolateKernal(float point_x, float point_y, float *mesh_x, size_t len
 	for (m = -1; m < 3; ++m) {
 		for (n = -1; n < 3; ++n) {
 			weight = fSpline(m - position_in_mesh_decimal[0])*fSpline(n - position_in_mesh_decimal[1]);
-			increment = *(mesh_value + (position_in_mesh_integer[0] + m) + dim2 * (position_in_mesh_integer[1] + n))*weight;
+			cloestMeshPoint = *(mesh_value + (position_in_mesh_integer[0] + m) + dim2 * (position_in_mesh_integer[1] + n));
+			increment = cloestMeshPoint * weight;
 			bicubic_answer += increment;
 		}
 	}
